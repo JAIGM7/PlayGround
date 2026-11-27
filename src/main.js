@@ -9,7 +9,7 @@ const sun=new THREE.DirectionalLight(0xbfeeff,2.4); sun.position.set(-8,14,8); s
 
 const gridSize=17, cell=1.12, wallH=1.55;
 let maze, player, goal, shards=[], portals=[], movingWalls=[], enemies=[], particles;
-let px=1,pz=1, collected=0, stability=100, started=false, level=1, moveCooldown=0, shake=0;
+let px=1,pz=1, collected=0, stability=100, started=false, level=1, moveCooldown=0, shake=0, facing=new THREE.Vector3(0,0,1);
 const wallMat=new THREE.MeshStandardMaterial({color:0x14294a,roughness:.35,metalness:.62,emissive:0x07172d,emissiveIntensity:.7});
 const wallSide=new THREE.MeshStandardMaterial({color:0x274a75,roughness:.25,metalness:.75,emissive:0x102b50,emissiveIntensity:.5});
 
@@ -53,8 +53,10 @@ function buildLevel(){
   for(let i=0;i<5;i++){const [x,y]=open[(i*53+20)%open.length];if(layout[y]&&layout[y][x]===0){const w=new THREE.Mesh(new THREE.BoxGeometry(cell*.94,wallH,cell*.94),wallSide);w.position.set((x-8)*cell,-wallH,(y-8)*cell);w.userData={gx:x,gy:y,axis:i%2?'x':'z',phase:i*1.7,active:false};maze.add(w);movingWalls.push(w)}}
   // player
   if(player)scene.remove(player); player=new THREE.Group();
-  const body=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),new THREE.MeshStandardMaterial({color:0xdffeff,emissive:0x4de5ff,emissiveIntensity:1.4,metalness:.7,roughness:.18}));body.castShadow=true;player.add(body);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.7,8),new THREE.MeshBasicMaterial({color:0x8cecff,transparent:true,opacity:.5}));beam.position.y=.35;player.add(beam);player.position.set(-7.84,.38,-7.84);scene.add(player);
-  px=1;pz=1;collected=0;stability=100;updateUI();
+  const body=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),new THREE.MeshStandardMaterial({color:0xdffeff,emissive:0x4de5ff,emissiveIntensity:1.4,metalness:.7,roughness:.18}));body.visible=false;body.castShadow=true;player.add(body);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.7,8),new THREE.MeshBasicMaterial({color:0x8cecff,transparent:true,opacity:.5}));beam.visible=false;beam.position.y=.35;player.add(beam);
+  const startX=(1-(gridSize-1)/2)*cell, startZ=(1-(gridSize-1)/2)*cell;
+  player.position.set(startX,.78,startZ);scene.add(player);
+  px=1;pz=1;facing.set(0,0,1);collected=0;stability=100;updateUI();
 }
 
 function updateUI(){document.getElementById('level').textContent=String(level).padStart(2,'0');document.getElementById('shards').textContent=`${collected}/3`;document.getElementById('stability').textContent=`${Math.ceil(stability)}%`;document.getElementById('progress').style.width=`${collected/3*100}%`}
@@ -72,6 +74,7 @@ function move(dx,dz){if(!started||moveCooldown>0)return;moveCooldown=.13;const n
   for(const c of maze.children){if(c.geometry?.type==='BoxGeometry'&&c.position.y>0.5){if(Math.abs(c.position.x-nx)<.85&&Math.abs(c.position.z-nz)<.85)hit=true}}
   if(hit){stability=Math.max(0,stability-4);shake=.12;updateUI();return}
   player.position.x=nx;player.position.z=nz;
+  if(dx||dz) facing.set(dx,0,dz).normalize();
 }
 
 window.addEventListener('keydown',e=>{const k=e.key.toLower; if(['arrowup','w'].includes(k))move(0,-1);if(['arrowdown','s'].includes(k))move(0,1);if(['arrowleft','a'].includes(k))move(-1,0);if(['arrowright','d'].includes(k))move(1,0)});
@@ -89,7 +92,10 @@ function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime()
     for(const p of portals){for(const item of [p.pa,p.pb]){item.children[0].material.opacity=.12+Math.max(0,.5-item.position.distanceTo(player.position))*1.1}if(p.cooldown>0)p.cooldown-=dt;const nearA=p.pa.position.distanceTo(player.position)<.55,nearB=p.pb.position.distanceTo(player.position)<.55;if(p.cooldown<=0&&(nearA||nearB)){const dest=nearA?p.pb:p.pa;player.position.copy(dest.position);player.position.y=.38;p.cooldown=2;toast('PHASE JUMP','PORTAL TRACE LOST');shake=.2}}
     movingWalls.forEach((w,i)=>{const cycle=(Math.sin(t*.45+w.userData.phase)+1)/2;w.position.y=cycle*wallH-wallH*.5;w.position[userData(w,'axis')]=(w.userData.gx-8)*cell+(Math.sin(t*.7+w.userData.phase)*.35)});
   }
-  camera.position.lerp(new THREE.Vector3(player.position.x*.25,12.5,player.position.z*.25+12),.035);camera.lookAt(player.position.x*.15,-.2,player.position.z*.15);
+  const eye=new THREE.Vector3(player.position.x,.78,player.position.z);
+  camera.position.lerp(eye,.28);
+  const lookTarget=new THREE.Vector3(player.position.x+facing.x*3,.72,player.position.z+facing.z*3);
+  camera.lookAt(lookTarget);
   if(shake>0){camera.position.x+=(Math.random-.5)*shake;camera.position.z+=(Math.random-.5)*shake;shake*=.8}
   renderer.render(scene,camera);
 }
