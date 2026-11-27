@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>MAZE//SHIFT</title>
+  <style>
+    :root { --cyan:#67e8f9; --pink:#ff4fd8; --gold:#ffd84d; --ink:#050817; }
+    * { box-sizing:border-box; }
+    html,body { width:100%; height:100%; margin:0; overflow:hidden; background:#050817; color:#eefcff; font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif; }
+    canvas { display:block; width:100%; height:100%; }
+    #app { position:relative; width:100%; height:100%; }
+    #hud { position:absolute; inset:0; pointer-events:none; padding:18px 22px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-start; }
+    .brand { font-weight:900; letter-spacing:-1px; font-size:20px; text-shadow:0 0 18px rgba(103,232,249,.4); }
+    .brand span { color:var(--cyan); }
+    .stats { display:flex; gap:8px; }
+    .chip { min-width:82px; height:42px; border:1px solid rgba(153,235,255,.18); background:rgba(5,11,30,.72); backdrop-filter:blur(12px); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:inset 0 1px rgba(255,255,255,.05); }
+    .chip small { color:#8393ad; text-transform:uppercase; font-size:8px; letter-spacing:2px; }
+    .chip strong { font-size:16px; margin-top:1px; }
+    #objective { position:absolute; left:22px; bottom:24px; width:260px; }
+    .eyebrow { color:var(--cyan); font-size:9px; letter-spacing:2.4px; font-weight:800; text-transform:uppercase; }
+    #objective p { margin:7px 0 10px; font-size:13px; color:#dceeff; }
+    .bar { height:3px; background:rgba(255,255,255,.1); border-radius:99px; overflow:hidden; }
+    #progress { height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--pink)); box-shadow:0 0 12px var(--cyan); transition:.25s; }
+    #toast { position:absolute; left:50%; top:18%; transform:translate(-50%,-10px); opacity:0; text-align:center; transition:.35s; }
+    #toast.show { opacity:1; transform:translate(-50%,0); }
+    #toast strong { display:block; font-size:28px; letter-spacing:-1px; }
+    #toast span { color:var(--cyan); font-size:10px; letter-spacing:4px; }
+    #start,#complete { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 42%,rgba(38,92,149,.23),rgba(3,6,17,.88) 58%,#030510 100%); backdrop-filter:blur(4px); z-index:5; pointer-events:auto; }
+    #complete { display:none; }
+    .panel { width:min(440px,calc(100% - 36px)); text-align:center; }
+    .panel-kicker { color:var(--cyan); letter-spacing:5px; font-size:10px; font-weight:800; }
+    h1 { font-size:clamp(48px,9vw,92px); line-height:.82; margin:18px 0 24px; letter-spacing:-7px; }
+    h1 span { color:transparent; -webkit-text-stroke:1px var(--cyan); text-shadow:0 0 28px rgba(103,232,249,.18); }
+    .panel p { color:#96a5ba; max-width:340px; margin:0 auto 26px; line-height:1.6; font-size:13px; }
+    button { pointer-events:auto; border:1px solid rgba(103,232,249,.5); background:rgba(103,232,249,.1); color:#effeff; height:48px; min-width:190px; border-radius:7px; font-weight:900; letter-spacing:2px; font-size:11px; cursor:pointer; box-shadow:0 0 30px rgba(103,232,249,.08),inset 0 1px rgba(255,255,255,.08); }
+    button:hover { background:rgba(103,232,249,.18); }
+    #controls { position:absolute; right:22px; bottom:22px; display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,44px); gap:5px; pointer-events:auto; opacity:.82; }
+    #controls button { min-width:44px; width:44px; height:44px; padding:0; font-size:16px; background:rgba(5,11,30,.72); }
+    #controls .up { grid-column:2; } #controls .left {grid-column:1;grid-row:2} #controls .down{grid-column:2;grid-row:2} #controls .right{grid-column:3;grid-row:2}
+    @media (pointer:fine) { #controls { display:none; } }
+    @media (max-width:600px) { #hud{padding:12px} .chip{min-width:62px;height:38px}.chip strong{font-size:13px}.stats{gap:4px}.brand{font-size:16px} #objective{left:12px;bottom:12px;width:190px} #objective p{font-size:11px} #controls{right:12px;bottom:12px} }
+  </style>
+  <script type="module" crossorigin src="/assets/index-4-CJI2Cr.js"></script>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="topbar"><div class="brand">MAZE<span>//</span>SHIFT</div><div class="stats"><div class="chip"><small>Level</small><strong id="level">01</strong></div><div class="chip"><small>Shards</small><strong id="shards">0/3</strong></div><div class="chip"><small>Stability</small><strong id="stability">100%</strong></div></div></div>
+    <div id="objective"><div class="eyebrow">Current objective</div><p id="objectiveText">Collect the 3 signal shards</p><div class="bar"><div id="progress"></div></div></div>
+    <div id="toast"><strong id="toastTitle">SHARD ACQUIRED</strong><span id="toastSub">SIGNAL 01</span></div>
+  </div>
+  <div id="start"><div class="panel"><div class="panel-kicker">SECTOR 7 // ONLINE</div><h1>MAZE<span>//</span><br>SHIFT</h1><p>Collect all signal shards. Outsmart the shifting walls. Find the portals that should not exist.</p><button id="play">ENTER THE MAZE</button></div></div>
+  <div id="complete"><div class="panel"><div class="panel-kicker">SEQUENCE COMPLETE</div><h1>GRID<br><span>RESTored</span></h1><p id="completeText">All sectors stabilized.</p><button id="again">RUN IT AGAIN</button></div></div>
+  <div id="controls"><button class="up" data-dir="up">▲</button><button class="left" data-dir="left">◀</button><button class="down" data-dir="down">▼</button><button class="right" data-dir="right">▶</button></div>
+</div>
+</body>
+</html>
