@@ -1,158 +1,55 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <title>Coinfall Jump</title>
-  <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#87c8ff; }
-    body { font-family: "Trebuchet MS", system-ui, sans-serif; touch-action:none; }
-    #game { position:relative; width:100%; height:100%; overflow:hidden; }
-    canvas { display:block; width:100%; height:100%; }
-    #hud { position:absolute; left:clamp(12px,3vw,32px); right:clamp(12px,3vw,32px); top:clamp(10px,2vh,22px); display:flex; align-items:flex-start; justify-content:space-between; pointer-events:none; text-shadow:0 3px 0 #4a376e, 0 0 8px #4a376e; color:white; }
-    .panel { background:rgba(48,42,91,.72); border:3px solid rgba(255,255,255,.75); border-radius:16px; box-shadow:0 5px 0 rgba(35,31,76,.5); }
-    #stats { display:flex; gap:18px; padding:10px 16px; font-weight:900; letter-spacing:.5px; }
-    #stats div { display:flex; flex-direction:column; align-items:center; line-height:1.05; }
-    #stats b { font-size:clamp(18px,2.5vw,28px); }
-    #stats span { font-size:11px; opacity:.85; }
-    #speed { padding:10px 14px; min-width:118px; text-align:center; font-weight:900; }
-    #speedBar { height:7px; margin-top:6px; border-radius:99px; background:rgba(0,0,0,.25); overflow:hidden; }
-    #speedFill { height:100%; width:50%; background:#ffdc58; box-shadow:0 0 8px #fff1a1; transition:width .15s; }
-    #toast { position:absolute; left:50%; top:18%; transform:translate(-50%,-50%) scale(.8); padding:9px 16px; border-radius:99px; background:#fff; color:#3c3169; border:3px solid #3c3169; font-weight:1000; opacity:0; transition:.18s ease-out; pointer-events:none; }
-    #toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
-    #overlay { position:absolute; inset:0; display:grid; place-items:center; background:rgba(70,54,120,.18); backdrop-filter:blur(3px); }
-    #overlay.hidden { display:none; }
-    .card { width:min(520px, calc(100% - 32px)); text-align:center; color:#fff; background:rgba(48,42,91,.94); border:5px solid #fff; border-radius:24px; padding:28px 22px 24px; box-shadow:0 10px 0 rgba(31,27,72,.55); }
-    .card h1 { margin:0 0 8px; font-size:clamp(38px,8vw,72px); line-height:.9; letter-spacing:-3px; color:#ffdc58; text-shadow:0 5px 0 #bf6952; }
-    .card p { margin:12px auto 18px; max-width:420px; line-height:1.45; font-weight:700; }
-    .ruleRow { display:flex; justify-content:center; gap:10px; margin:14px 0 18px; }
-    .rule { flex:1; max-width:150px; border-radius:14px; background:rgba(255,255,255,.1); padding:9px 6px; font-size:13px; }
-    .rule strong { display:block; color:#ffdc58; font-size:20px; }
-    button { border:0; border-radius:14px; padding:13px 22px; background:#ffdc58; color:#3d315f; box-shadow:0 6px 0 #d68c43; font:900 18px inherit; cursor:pointer; }
-    button:active { transform:translateY(4px); box-shadow:0 2px 0 #d68c43; }
-    #controls { position:absolute; left:14px; right:14px; bottom:clamp(12px,3vh,28px); display:flex; justify-content:space-between; pointer-events:none; }
-    .control { width:78px; height:78px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.28); border:3px solid rgba(255,255,255,.72); color:white; font-size:34px; font-weight:900; text-shadow:0 3px #5960a3; pointer-events:auto; user-select:none; backdrop-filter:blur(3px); }
-    .control.jump { width:92px; height:92px; background:rgba(255,220,88,.38); }
-    @media (hover:hover) and (pointer:fine) { #controls { display:none; } }
-  </style>
-</head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Coinflip Kingdom</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Press+Start+2P&display=swap');
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#74b9ff;font-family:Fredoka,sans-serif;touch-action:none;user-select:none}
+#game{display:block;width:100%;height:100%;image-rendering:auto}.hud{position:absolute;inset:0 0 auto 0;height:76px;display:flex;align-items:flex-start;justify-content:center;gap:4.5vw;padding:10px 16px;pointer-events:none;color:white;text-shadow:3px 3px 0 #263b78, -1px -1px 0 #263b78}.stat{text-align:center}.label{font-family:'Press Start 2P';font-size:10px;color:#fff3a5}.value{font-size:28px;font-weight:700;line-height:34px}.jumpbar{position:absolute;left:20px;bottom:18px;width:210px;height:28px;border:4px solid #263b78;border-radius:16px;background:rgba(255255255,.25);overflow:hidden}.jumpfill{height:100%;width:50%;background:linear-gradient(90deg,#ff5b6b,#ffdb52);transition:width .15s}.jumplabel{position:absolute;left:24px;bottom:52px;color:white;font:10px 'Press Start 2P';text-shadow:2px 2px #263b78}
+.panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:min(520px,calc(100vw - 32px));padding:28px 34px 24px;text-align:center;color:white;background:#263b78;border:6px solid white;border-radius:24px;box-shadow:0 10px 0 #172b5a,0 16px 30px #18285255}.panel h1{margin:0 0 10px;font-family:'Press Start 2P';font-size:28px;line-height:1.35;color:#ffdf4f;text-shadow:4px 4px #cc3d55}.panel p{margin:10px 0 18px;font-size:18px}.panel button{border:0;border-radius:14px;padding:15px 24px;background:#ffcf38;color:#263b78;font:700 18px Fredoka;box-shadow:0 6px #d08a22;cursor:pointer}.panel button:active{transform:translateY(4px);box-shadow:0 2px #d08a22}.hidden{display:none}.controls{position:absolute;inset:auto 16px 12px 16px;height:94px;display:flex;justify-content:space-between;pointer-events:none}.controls button{pointer-events:auto;width:82px;height:82px;border:4px solid rgba(255255255,.9);border-radius:50%;background:rgba(38,59,120,.65);color:white;font-size:38px;box-shadow:0 5px 12px #2d4e7955}.controls .rightset{display:flex;gap:10px}.flash{animation:flash .25s}@keyframes flash{50%{filter:brightness(2)}}
+@media(min-width:800px){.controls{opacity:.5}.controls button{width:70px;height:70px}}
+@media(max-height:500px){.hud{height:58px}.value{font-size:22px}.label{font-size:8px}.jumpbar,.jumplabel{display:none}.controls{height:76px}.controls button{width:64px;height:64px}.panel{padding:18px 24px}.panel h1{font-size:21px}.panel p{font-size:15px;margin:6px 0 12px}}
+</style></head>
 <body>
-<div id="game">
-  <canvas id="canvas"></canvas>
-  <div id="hud">
-    <div id="stats" class="panel"><div><b id="coins">0</b><span>COINS</span></div><div><b id="kills">0</b><span>STOMPS</span></div><div><b id="deaths">0</b><span>DEATHS</span></div></div>
-    <div id="speed" class="panel">SPEED <b id="speedNum">1.0×</b><div id="speedBar"><div id="speedFill"></div></div></div>
-  </div>
-  <div id="toast"></div>
-  <div id="controls"><div id="left" class="control">◀</div><div id="jump" class="control jump">▲</div><div id="right" class="control">▶</div></div>
-  <div id="overlay"><div class="card"><h1 id="title">COINFALL</h1><p id="subtitle">Collect coins. Stomp enemies. Reach the flag.</p><div class="ruleRow"><div class="rule"><strong>+ Coin</strong>Jump higher</div><div class="rule"><strong>+ Stomp</strong>Jump lower</div><div class="rule"><strong>Fast pace</strong>Death & clear</div></div><button id="start">START RUN</button></div></div>
-</div>
+<canvas id="game"></canvas>
+<div class="hud"><div class="stat"><div class="label">COINS</div><div class="value" id="coins">0</div></div><div class="stat"><div class="label">STOMPS</div><div class="value" id="kills">0</div></div><div class="stat"><div class="label">SPEED</div><div class="value" id="speed">1.0×</div></div></div>
+<div class="jumplabel">JUMP POWER</div><div class="jumpbar"><div class="jumpfill" id="jumpfill"></div></div>
+<div id="panel" class="panel"><h1 id="title">COINFLIP</h1><p id="subtitle">Collect coins to jump higher.<br>Enemies make you jump lower.</p><button id="action">START</button></div>
+<div class="controls"><button id="left">◀</button><div class="rightset"><button id="down">▼</button><button id="jump">A</button></div></div>
 <script>
-(() => {
-const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
-let W,H,scale=1,last=0,raf;
-const keys={left:false,right:false,jump:false};
-let started=false,ended=false,toastTimer=0;
-const state={coins:0,kills:0,deaths:0,clears:0,speed:1,shake:0};
-const player={x:70,y:0,vx:0,vy:0,w:34,h:46,ground:false,jumpBoost:0,inv:0,facing:1};
-let world=[],platforms=[],coins=[],enemies=[],goal={};
-
-function resize(){
-  const dpr=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
-  canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
-  scale=Math.max(.75,Math.min(1.25,H/720));
-}
-addEventListener('resize',resize); resize();
-
-function build(){
-  platforms=[]; coins=[]; enemies=[]; world=[];
-  const floor=H*.82;
-  platforms.push({x:0,y:floor,w:W+800,h:100});
-  // fixed course + generated sections across a scrolling world
-  const unit=Math.max(500,W*.75);
-  const ys=[floor-92,floor-150,floor-210,floor-125,floor-190,floor-100];
-  for(let i=0;i<9;i++){
-    const x=190+i*unit*.58;
-    const y=ys[i%ys.length];
-    platforms.push({x,y,w:Math.max(120,W*.16),h:22});
-  }
-  // Midair stepping platforms
-  platforms.push({x:W*.42,y:floor-210,w:150,h:22}); platforms.push({x:W*.70,y:floor-300,w:150,h:22});
-  platforms.push({x:W*.95,y:floor-210,w:170,h:22});
-  for(let i=0;i<platforms.length;i++){
-    const p=platforms[i];
-    if(i===0) continue;
-    for(let j=0;j<2;j++) coins.push({x:p.x+p.w*.25+j*p.w*.38,y:p.y-34,t:0,taken:false});
-  }
-  enemies=[{x:W*.43,y:floor-38,w:38,h:38,vx:45,base:W*.43,range:170,alive:true,dir:1},{x:W*.76,y:floor-38,w:38,h:38,vx:55,base:W*.76,range:210,alive:true,dir:-1},{x:W*.98,y:floor-38,w:38,h:38,vx:65,base:W*.98,range:230,alive:true,dir:1},{x:platforms[2].x+50,y:platforms[2].y-38,w:38,h:38,vx:28,base:platforms[2].x+50,range:80,alive:true,dir:1},{x:platforms[5].x+50,y:platforms[5].y-38,w:38,h:38,vx:35,base:platforms[5].x+50,range:90,alive:true,dir:-1}];
-  goal={x:Math.max(W*.92,platforms[platforms.length-1].x+220),y:floor-150,w:28,h:150};
-}
-
-function resetPlayer(){ player.x=70; player.y=H*.82-player.h; player.vx=0; player.vy=0; player.inv=1; }
-function start(){ build(); resetPlayer(); state.coins=0;state.kills=0;state.deaths=0;state.speed=1;player.jumpBoost=0;started=true;ended=false;document.getElementById('overlay').classList.add('hidden');updateHUD(); }
-
-function jump(){ if(!started||ended)return; if(player.ground){ const jumpV=-680-Math.min(player.jumpBoost,10)*48; player.vy=jumpV; player.ground=false; } }
-
-function killPlayer(){ if(player.inv>0)return; state.deaths++; state.speed=Math.min(2.4,1+state.deaths*.12); player.jumpBoost=Math.max(0,player.jumpBoost-1); state.shake=12; resetPlayer(); toast('OUCH! SPEED UP'); updateHUD(); }
-function clear(){ if(ended)return; ended=true;state.clears++;state.speed=Math.min(2.4,1+(state.deaths+state.clears)*.12); setTimeout(()=>{ const card=document.querySelector('.card');document.getElementById('title').textContent='COURSE CLEAR!';document.getElementById('subtitle').textContent=`Coins ${state.coins} · Stomps ${state.kills} · Deaths ${state.deaths}`;document.getElementById('start').textContent='RUN AGAIN';document.getElementById('overlay').classList.remove('hidden'); },350); updateHUD(); }
-function toast(text){ const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),700); }
-function updateHUD(){ document.getElementById('coins').textContent=state.coins;document.getElementById('kills').textContent=state.kills;document.getElementById('deaths').textContent=state.deaths;document.getElementById('speedNum').textContent=state.speed.toFixed(1)+'×';document.getElementById('speedFill').style.width=Math.min(100,(state.speed-.7)/1.7*100)+'%'; }
-
-function rects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
-function update(dt){
-  if(!started||ended)return;
-  dt=Math.min(dt,.032)*state.speed; player.inv=Math.max(0,player.inv-dt);
-  const accel=1700, max=260*scale;
-  if(keys.left){player.vx-=accel*dt;player.facing=-1}else if(keys.right){player.vx+=accel*dt;player.facing=1}else player.vx*=Math.pow(.001,dt);
-  player.vx=Math.max(-max,Math.min(max,player.vx));
-  player.vy+=1150*dt; player.x+=player.vx*dt; player.y+=player.vy*dt;
-  player.ground=false;
-  for(const p of platforms){ if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h-player.vy*dt<=p.y+8){ player.y=p.y-player.h;player.vy=0;player.ground=true; } }
-  if(player.y>H+100)killPlayer();
-  if(player.x<0)player.x=0;
-  for(const c of coins){ c.t+=dt;if(!c.taken&&rects(player,{x:c.x-12,y:c.y-12,w:24,h:24})) { c.taken=true;state.coins++;player.jumpBoost=Math.min(12,player.jumpBoost+1);toast('+ COIN  JUMP UP');updateHUD(); } }
-  for(const e of enemies){ if(!e.alive)continue;e.x=e.base+Math.sin(performance.now()/700*e.dir)*e.range; if(rects(player,e)){ if(player.vy>120&&player.y+player.h-e.y<22){e.alive=false;player.vy=-520;state.kills++;player.jumpBoost=Math.max(0,player.jumpBoost-1);toast('STOMP  JUMP DOWN');updateHUD();}else killPlayer(); } }
-  if(rects(player,goal))clear();
-  state.shake=Math.max(0,state.shake-dt*30);
-}
-
-function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  // sky
-  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#70c2ff');g.addColorStop(.75,'#b9e8ff');g.addColorStop(1,'#f5edca');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // clouds
-  ctx.fillStyle='rgba(255,255,255,.88)'; for(let i=-1;i<7;i++){let x=((i*260-player.x*.12)%1820)-100;if(x<-180)x+=1820;cloud(x,H*.16+(i%3)*45);} 
-  // parallax hills
-  ctx.fillStyle='#75b96d';ctx.beginPath();ctx.moveTo(0,H*.82);for(let x=-200;x<W+300;x+=240){ctx.quadraticCurveTo(x+120,H*.48-(x%2)*20,x+240,H*.82)}ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
-  ctx.save();ctx.translate(-Math.min(player.x-W*.25,0),0);ctx.translate((Math.random-.5)*state.shake,(Math.random-.5)*state.shake);
-  // platforms
-  for(const p of platforms){ drawPlatform(p); }
-  // coins
-  for(const c of coins){if(c.taken)continue;drawCoin(c.x,c.y,c.t)}
-  // enemies
-  for(const e of enemies)if(e.alive)drawEnemy(e);
-  drawGoal(goal);
-  drawPlayer();ctx.restore();
-}
-function cloud(x,y){ctx.beginPath();ctx.arc(x,y,24,0,7);ctx.arc(x+28,y-12,34,0,7);ctx.arc(x+65,y-3,27,0,7);ctx.arc(x+95,y+8,20,0,7);ctx.fill();}
-function drawPlatform(p){ctx.fillStyle='#9a633d';ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle='#69ae46';ctx.fillRect(p.x,p.y,p.w,10);ctx.fillStyle='#91d468';for(let x=p.x;x<p.x+p.w;x+=24){ctx.beginPath();ctx.moveTo(x,p.y+10);ctx.lineTo(x+12,p.y+10);ctx.lineTo(x+18,p.y+18);ctx.lineTo(x+6,p.y+18);ctx.fill()}ctx.fillStyle='#b87c50';for(let x=p.x+10;x<p.x+p.w;x+=38)ctx.fillRect(x,p.y+18,18,4)}
-function drawCoin(x,y,t){ctx.save();ctx.translate(x,y);ctx.scale(.65+Math.abs(Math.sin(t*5))*1.35,1);ctx.fillStyle='#ffb526';ctx.beginPath();ctx.arc(0,0,13,0,7);ctx.fill();ctx.strokeStyle='#fff18a';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#e18a20';ctx.fillRect(-2,-8,4,16);ctx.restore();}
-function drawEnemy(e){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle='#75453a';roundRect(0,5,e.w,e.h-5,12);ctx.fillStyle='#4a302d';ctx.fillRect(4,29,30,9);ctx.fillStyle='#fff';ctx.fillRect(7,10,9,10);ctx.fillRect(22,10,9,10);ctx.fillStyle='#222';ctx.fillRect(12,13,4,7);ctx.fillRect(22,13,4,7);ctx.restore();}
-function drawGoal(g){ctx.fillStyle='#fff';ctx.fillRect(g.x,g.y,7,g.h);ctx.fillStyle='#ed4d59';ctx.beginPath();ctx.moveTo(g.x+7,g.y+8);ctx.lineTo(g.x+62,g.y+25);ctx.lineTo(g.x+7,g.y+43);ctx.fill();ctx.fillStyle='#ffd45c';ctx.beginPath();ctx.arc(g.x+3,g.y-5,9,0,7);ctx.fill();}
-function drawPlayer(){ctx.save();ctx.translate(player.x+player.w/2,player.y+player.h/2);ctx.scale(player.facing,1);ctx.fillStyle='#ed4d59';roundRect(-17,-23,34,16,7);ctx.fillStyle='#ffb13b';ctx.fillRect(-12,-7,24,18);ctx.fillStyle='#ffd0a1';roundRect(-10,-18,20,15,6);ctx.fillStyle='#493c73';ctx.fillRect(-11,11,9,12);ctx.fillRect(2,11,9,12);ctx.fillStyle='#fff';ctx.fillRect(-8,-15,5,5);ctx.fillStyle='#322b51';ctx.fillRect(-5,-14,3,5);ctx.fillStyle='#754b31';ctx.beginPath();ctx.moveTo(-12,-20);ctx.lineTo(12,-20);ctx.lineTo(8,-14);ctx.lineTo(-15,-14);ctx.fill();ctx.restore();}
-
-function loop(t){const dt=(t-last)/1000||0;last=t;update(dt);draw();raf=requestAnimationFrame(loop)}
-raf=requestAnimationFrame(loop);
-
-document.getElementById('start').onclick=start;
-addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.left=true;if(['ArrowRight','d','D'].includes(e.key))keys.right=true;if(['ArrowUp','w','W',' '].includes(e.key)){keys.jump=true;jump()}if(e.key==='r'||e.key==='R')start();});
-addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.left=false;if(['ArrowRight','d','D'].includes(e.key))keys.right=false;if(['ArrowUp','w','W',' '].includes(e.key))keys.jump=false;});
-function bind(id,left,right,jumpKey){const el=document.getElementById(id);let key=id;if(right)key='right';else if(left)key='left';else key='jump';const on=ev=>{ev.prevent.preventDefault?.();ev.preventDefault();if(key==='jump')jump();else keys[key]=true};const off=ev=>{ev.preventDefault();if(key!=='jump')keys[key]=false};el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off)}
-bind('left',true,false,false);bind('right',false,true,false);bind('jump',false,false,true);
-})();
-</script>
-</body>
-</html>
+const c=document.getElementById('game'),x=c.getContext('2d');let W,H,scale;
+function resize(){W=c.width=Math.floor(innerWidth*devicePixelRatio);H=c.height=Math.floor(innerHeight*devicePixelRatio);c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';scale=Math.min(W/900,H/520)}resize();addEventListener('resize',resize);
+const $=s=>document.querySelector(s),keys={};let state='menu',camera=0,level=1,coins=0,kills=0,baseSpeed=220,gameSpeed=1,jumpPower=550;
+const world={w:5100,h:520};
+function makeLevel(){let ground=[{x:-100,w:850,y:440,h:100},{x:870,w:700,y:440,h:100},{x:1700,w:620,y:440,h:100},{x:2470,w:760,y:440,h:100},{x:3380,w:700,y:440,h:100},{x:4220,w:980,y:440,h:100}];let platforms=[{x:330,y:330,w:160,h:28},{x:620,y:270,w:150,h:28},{x:960,y:340,w:170,h:28},{x:1190,y:250,w:150,h:28},{x:1540,y:330,w:180,h:28},{x:2020,y:310,w:200,h:28},{x:2300,y:220,w:150,h:28},{x:2730,y:330,w:170,h:28},{x:3020,y:250,w:180,h:28},{x:3500,y:320,w:190,h:28},{x:3820,y:230,w:150,h:28},{x:4260,y:330,w:180,h:28},{x:4520,y:250,w:150,h:28}];let coinPos=[];for(let i=0;i<45;i++){coinPos.push({x:260+i*105+(i%3)*35,y:160+(i%5)*42,got:false})}let enemies=[];[1050,1810,2170,2880,3600,3970,4400,4690].forEach((a,i)=>enemies.push({x:a,y:408,w:34,h:32,vx:(i%2?-.7:.7)*55,alive:true,ang:0}));world.ground=ground;world.platforms=platforms;world.coins=coinPos;world.enemies=enemies}
+makeLevel();let p={x:100,y:380,w:38,h:50,vx:0,vy:0,on:false,face:1,inv:0};
+function resetLife(fast=true){p.x=100;p.y=380;p.vx=0;p.vy=0;p.inv=1;if(fast){gameSpeed=Math.min(2.2,gameSpeed+.12)}camera=0;makeLevel();updateHud()}
+function start(){coins=0;kills=0;level=1;gameSpeed=1;jumpPower=550;p={x:100,y:380,w:38,h:50,vx:0,vy:0,on:false,face:1,inv:0};makeLevel();camera=0;state='play';$('#panel').classList.add('hidden');updateHud()}
+function updateHud(){coinsEl=0;$('#coins').textContent=coins;$('#kills').textContent=kills;$('#speed').textContent=gameSpeed.toFixed(1)+'×';$('#jumpfill').style.width=Math.max(8,Math.min(100,(jumpPower-320)/620*100)+'%')}
+let coinsEl=0;
+$('#action').onclick=start;
+function rect(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function jump(){if(state==='play'&&p.on){p.vy=-jumpPower;p.on=false}}
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' '||e.key==='ArrowUp'||e.key==='w')jump();if(e.key==='Enter'&&state!=='play')start()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+[['left','arrowleft','a'],['right','arrowright','d']].forEach(([id,_,key])=>{let el=$('#'+id);el.onpointerdown=e=>{e.preventDefault();keys[key]=true};el.onpointerup=()=>keys[key]=false;el.onpointerleave=()=>keys[key]=false});
+// right button is handled as D
+$('#jump').onpointerdown=e=>{e.preventDefault();jump()};$('#down').onpointerdown=e=>{e.preventDefault();keys['arrowdown']=true};$('#down').onpointerup=()=>keys['arrowdown']=false;
+let last=performance.now(),frame=0;
+function update(dt){if(state==='play'){dt=Math.min(dt,.032)*gameSpeed;let left=keys.arrowleft||keys.a,right=keys.arrowright||keys.d;p.vx=left?-220:right?220:0;if(left)p.face=-1;if(right)p.face=1;if(p.on&&keys.ArrowDown)p.vy=-jumpPower*.3;p.on=false;p.vy+=1500*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.x<0)p.x=0;if(p.x+p.w>world.w)p.x=world.w-p.w;for(let g of [...world.ground,...world.platforms]){if(p.vy>=0&&p.x+p.w>g.x&&p.x<g.x+g.w&&p.y+p.h>=g.y&&p.y+p.h-p.vy*dt<=g.y){p.y=g.y-p.h;p.vy=0;p.on=true}}for(let q of world.coins){if(!q.got&&p.x+p.w>q.x-14&&p.x<q.x+14&&p.y+p.h>q.y-14&&p.y<q.y+14){q.got=true;coins++;jumpPower=Math.min(760,jumpPower+18);frame=20;updateHud()}}for(let m of world.enemies){if(!m.alive)continue;m.x+=m.vx*dt;if(m.x<world.ground[0].x||m.x>world.w)m.vx*=-1;let hit=rect(p,m);if(hit){if(p.vy>120&&p.y+p.h-m.y<24){m.alive=false;p.vy=-Math.min(jumpPower*.55,430);kills++;jumpPower=Math.max(330,jumpPower-26);updateHud()}else if(p.inv<=0){p.inv=1;showPanel('YOU DIED','The world gets 12% faster.','TRY AGAIN',true)}}m.ang+=dt*5}p.inv-=dt;if(p.y>580){p.inv=1;showPanel('YOU FELL','Every death is faster.','TRY AGAIN',true)}if(p.x>4900){gameSpeed=Math.min(2.4,gameSpeed+.1);state='clear';worldComplete()}}camera+=(p.x-260-camera)*Math.min(1,dt*5);camera=Math.max(0,Math.min(world.w-innerWidth/scale,camera));p.inv=Math.max(0,p.inv)}}
+function showPanel(title,sub,button,death){gameSpeed=Math.min(2.2,gameSpeed+.12);state='dead';$('#title').textContent=title;$('#subtitle').innerHTML=sub;$('#action').textContent=button;$('#panel').classList.remove('hidden');updateHud()}
+function worldComplete(){gameSpeed=Math.min(2.4,gameSpeed+.1);$('#title').textContent='COURSE CLEAR!';$('#subtitle').innerHTML='Coins +'+coins+' &nbsp; • &nbsp; Stomps '+kills+'<br>The next run is '+gameSpeed.toFixed(1)+'× speed.';$('#action').textContent='PLAY AGAIN';$('#panel').classList.remove('hidden');updateHud()}
+function coinShape(cx,cy,r){x.save();x.translate(cx,cy);x.scale(.62,1);x.beginPath();x.arc(0,0,r,0,Math.PI*2);x.fillStyle='#ffcf38';x.fill();x.strokeStyle='#f19c32';x.lineWidth=5;x.stroke();x.beginPath();x.moveTo(-1,-r*.55);x.lineTo(-1,r*.55);x.strokeStyle='#fff6a3';x.lineWidth=4;x.stroke();x.restore()}
+function draw(){let vw=W/scale,vh=H/scale,xw=vW=vH=0;x.setTransform(scale,0,0,scale,0,0);let sky=x.createLinearGradient(0,0,0,520);sky.addColorStop(0,'#58adee');sky.addColorStop(.75,'#8bd3ef');x.fillStyle=sky;x.fillRect(0,0,900,520);x.save();x.translate(-camera*.18,0);drawCloud(100,100);drawCloud(520,70);drawCloud(820,140);drawHill(180,440);drawHill(510,440);drawHill(780,440);x.restore();x.save();x.translate(-camera,0);
+for(let g of world.ground){x.fillStyle='#6bc94e';x.fillRect(g.x,g.y,g.w,g.h);x.fillStyle='#cd7a43';for(let i=0;i<g.w;i+=32)x.fillRect(g.x+i,g.y+10,28,g.h);x.fillStyle='#9bd86b';x.fillRect(g.x,g.y, g.w,12)}
+for(let g of world.platforms){x.fillStyle='#df8a49';x.fillRect(g.x,g.y,g.w,g.h);x.fillStyle='#b45e35';x.fillRect(g.x,g.y+g.h-7,g.w,7);x.fillStyle='#ffe08a';for(let i=0;i<g.w;i+=32)x.fillRect(g.x+i+5,g.y+6,22,6)}
+for(let q of world.coins)if(!q.got)coinShape(q.x,q.y,16);
+for(let m of world.enemies){if(!m.alive)continue;x.save();x.translate(m.x+m.w/2,m.y+m.h/2);x.scale(m.vx<0?-1:1,1);x.fillStyle='#7c4aa5';x.beginPath();x.moveTo(-17,16);x.lineTo(-15,-8);x.quadraticCurveTo(0,-26,15,-8);x.lineTo(17,16);x.fill();x.fillStyle='#fff';x.fillRect(-11,-5,9,10);x.fillRect(5,-5,9,10);x.fillStyle='#263b78';x.fillRect(-7,-2,4,7);x.fillRect(8,-2,4,7);x.fillStyle='#5f3586';x.fillRect(-16,12,12,5);x.fillRect(4,12,12,5);x.restore()}
+// player
+if(p.inv%0.14<0.07){x.save();x.translate(p.x+p.w/2,p.y+p.h/2);x.scale(p.face,1);x.fillStyle='#263b78';x.fillRect(-18,-24,36,8);x.fillStyle='#ee5b44';x.fillRect(-15,-16,30,25);x.fillStyle='#ffe0bd';x.fillRect(-13,-10,26,14);x.fillStyle='#263b78';x.fillRect(-12,15,9,10);x.fillRect(4,15,9,10);x.fillStyle='#3b78b5';x.fillRect(-10,8,20,11);x.fillStyle='#ffe0bd';x.beginPath();x.arc(0,-16,10,0,Math.PI*2);x.fill();x.fillStyle='#263b78';x.fillRect(-11,-27,22,7);x.fillRect(-8,-32,14,7);x.fillStyle='#263b78';x.fillRect(5,-18,3,3);x.restore()}
+// goal
+x.fillStyle='#263b78';x.fillRect(4840,170,12,270);x.fillStyle='#ee5b44';x.beginPath();x.moveTo(4852,176);x.lineTo(4930,205);x.lineTo(4852,234);x.fill();x.fillStyle='#ffe16a';x.beginPath();x.arc(4846,170,15,0,Math.PI*2);x.fill();x.restore();x.setTransform(1,0,0,1,0,0)}
+function drawCloud(a,b){x.fillStyle='rgba(255,255,255,.86)';x.beginPath();x.arc(a,b,25,0,7);x.arc(a+30,b-8,32,0,7);x.arc(a+65,b,26,0,7);x.fillRect(a-5,b,75,24);x.fill()}
+function drawHill(a,b){x.fillStyle='#55b84d';x.beginPath();x.moveTo(a-100,b);x.quadraticCurveTo(a-50,b-120,a,b);x.quadraticCurveTo(a+50,b-120,a+100,b);x.fill()}
+function loop(now){let dt=(now-last)/1000;last=now;update(dt);draw();frame=Math.max(0,frame-1);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+</script></body></html>
