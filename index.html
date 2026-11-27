@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Coinfall Jump</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#87c8ff; }
+    body { font-family: "Trebuchet MS", system-ui, sans-serif; touch-action:none; }
+    #game { position:relative; width:100%; height:100%; overflow:hidden; }
+    canvas { display:block; width:100%; height:100%; }
+    #hud { position:absolute; left:clamp(12px,3vw,32px); right:clamp(12px,3vw,32px); top:clamp(10px,2vh,22px); display:flex; align-items:flex-start; justify-content:space-between; pointer-events:none; text-shadow:0 3px 0 #4a376e, 0 0 8px #4a376e; color:white; }
+    .panel { background:rgba(48,42,91,.72); border:3px solid rgba(255,255,255,.75); border-radius:16px; box-shadow:0 5px 0 rgba(35,31,76,.5); }
+    #stats { display:flex; gap:18px; padding:10px 16px; font-weight:900; letter-spacing:.5px; }
+    #stats div { display:flex; flex-direction:column; align-items:center; line-height:1.05; }
+    #stats b { font-size:clamp(18px,2.5vw,28px); }
+    #stats span { font-size:11px; opacity:.85; }
+    #speed { padding:10px 14px; min-width:118px; text-align:center; font-weight:900; }
+    #speedBar { height:7px; margin-top:6px; border-radius:99px; background:rgba(0,0,0,.25); overflow:hidden; }
+    #speedFill { height:100%; width:50%; background:#ffdc58; box-shadow:0 0 8px #fff1a1; transition:width .15s; }
+    #toast { position:absolute; left:50%; top:18%; transform:translate(-50%,-50%) scale(.8); padding:9px 16px; border-radius:99px; background:#fff; color:#3c3169; border:3px solid #3c3169; font-weight:1000; opacity:0; transition:.18s ease-out; pointer-events:none; }
+    #toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    #overlay { position:absolute; inset:0; display:grid; place-items:center; background:rgba(70,54,120,.18); backdrop-filter:blur(3px); }
+    #overlay.hidden { display:none; }
+    .card { width:min(520px, calc(100% - 32px)); text-align:center; color:#fff; background:rgba(48,42,91,.94); border:5px solid #fff; border-radius:24px; padding:28px 22px 24px; box-shadow:0 10px 0 rgba(31,27,72,.55); }
+    .card h1 { margin:0 0 8px; font-size:clamp(38px,8vw,72px); line-height:.9; letter-spacing:-3px; color:#ffdc58; text-shadow:0 5px 0 #bf6952; }
+    .card p { margin:12px auto 18px; max-width:420px; line-height:1.45; font-weight:700; }
+    .ruleRow { display:flex; justify-content:center; gap:10px; margin:14px 0 18px; }
+    .rule { flex:1; max-width:150px; border-radius:14px; background:rgba(255,255,255,.1); padding:9px 6px; font-size:13px; }
+    .rule strong { display:block; color:#ffdc58; font-size:20px; }
+    button { border:0; border-radius:14px; padding:13px 22px; background:#ffdc58; color:#3d315f; box-shadow:0 6px 0 #d68c43; font:900 18px inherit; cursor:pointer; }
+    button:active { transform:translateY(4px); box-shadow:0 2px 0 #d68c43; }
+    #controls { position:absolute; left:14px; right:14px; bottom:clamp(12px,3vh,28px); display:flex; justify-content:space-between; pointer-events:none; }
+    .control { width:78px; height:78px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.28); border:3px solid rgba(255,255,255,.72); color:white; font-size:34px; font-weight:900; text-shadow:0 3px #5960a3; pointer-events:auto; user-select:none; backdrop-filter:blur(3px); }
+    .control.jump { width:92px; height:92px; background:rgba(255,220,88,.38); }
+    @media (hover:hover) and (pointer:fine) { #controls { display:none; } }
+  </style>
+</head>
+<body>
+<div id="game">
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div id="stats" class="panel"><div><b id="coins">0</b><span>COINS</span></div><div><b id="kills">0</b><span>STOMPS</span></div><div><b id="deaths">0</b><span>DEATHS</span></div></div>
+    <div id="speed" class="panel">SPEED <b id="speedNum">1.0×</b><div id="speedBar"><div id="speedFill"></div></div></div>
+  </div>
+  <div id="toast"></div>
+  <div id="controls"><div id="left" class="control">◀</div><div id="jump" class="control jump">▲</div><div id="right" class="control">▶</div></div>
+  <div id="overlay"><div class="card"><h1 id="title">COINFALL</h1><p id="subtitle">Collect coins. Stomp enemies. Reach the flag.</p><div class="ruleRow"><div class="rule"><strong>+ Coin</strong>Jump higher</div><div class="rule"><strong>+ Stomp</strong>Jump lower</div><div class="rule"><strong>Fast pace</strong>Death & clear</div></div><button id="start">START RUN</button></div></div>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+let W,H,scale=1,last=0,raf;
+const keys={left:false,right:false,jump:false};
+let started=false,ended=false,toastTimer=0;
+const state={coins:0,kills:0,deaths:0,clears:0,speed:1,shake:0};
+const player={x:70,y:0,vx:0,vy:0,w:34,h:46,ground:false,jumpBoost:0,inv:0,facing:1};
+let world=[],platforms=[],coins=[],enemies=[],goal={};
+
+function resize(){
+  const dpr=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+  canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  scale=Math.max(.75,Math.min(1.25,H/720));
+}
+addEventListener('resize',resize); resize();
+
+function build(){
+  platforms=[]; coins=[]; enemies=[]; world=[];
+  const floor=H*.82;
+  platforms.push({x:0,y:floor,w:W+800,h:100});
+  // fixed course + generated sections across a scrolling world
+  const unit=Math.max(500,W*.75);
+  const ys=[floor-92,floor-150,floor-210,floor-125,floor-190,floor-100];
+  for(let i=0;i<9;i++){
+    const x=190+i*unit*.58;
+    const y=ys[i%ys.length];
+    platforms.push({x,y,w:Math.max(120,W*.16),h:22});
+  }
+  // Midair stepping platforms
+  platforms.push({x:W*.42,y:floor-210,w:150,h:22}); platforms.push({x:W*.70,y:floor-300,w:150,h:22});
+  platforms.push({x:W*.95,y:floor-210,w:170,h:22});
+  for(let i=0;i<platforms.length;i++){
+    const p=platforms[i];
+    if(i===0) continue;
+    for(let j=0;j<2;j++) coins.push({x:p.x+p.w*.25+j*p.w*.38,y:p.y-34,t:0,taken:false});
+  }
+  enemies=[{x:W*.43,y:floor-38,w:38,h:38,vx:45,base:W*.43,range:170,alive:true,dir:1},{x:W*.76,y:floor-38,w:38,h:38,vx:55,base:W*.76,range:210,alive:true,dir:-1},{x:W*.98,y:floor-38,w:38,h:38,vx:65,base:W*.98,range:230,alive:true,dir:1},{x:platforms[2].x+50,y:platforms[2].y-38,w:38,h:38,vx:28,base:platforms[2].x+50,range:80,alive:true,dir:1},{x:platforms[5].x+50,y:platforms[5].y-38,w:38,h:38,vx:35,base:platforms[5].x+50,range:90,alive:true,dir:-1}];
+  goal={x:Math.max(W*.92,platforms[platforms.length-1].x+220),y:floor-150,w:28,h:150};
+}
+
+function resetPlayer(){ player.x=70; player.y=H*.82-player.h; player.vx=0; player.vy=0; player.inv=1; }
+function start(){ build(); resetPlayer(); state.coins=0;state.kills=0;state.deaths=0;state.speed=1;player.jumpBoost=0;started=true;ended=false;document.getElementById('overlay').classList.add('hidden');updateHUD(); }
+
+function jump(){ if(!started||ended)return; if(player.ground){ const jumpV=-680-Math.min(player.jumpBoost,10)*48; player.vy=jumpV; player.ground=false; } }
+
+function killPlayer(){ if(player.inv>0)return; state.deaths++; state.speed=Math.min(2.4,1+state.deaths*.12); player.jumpBoost=Math.max(0,player.jumpBoost-1); state.shake=12; resetPlayer(); toast('OUCH! SPEED UP'); updateHUD(); }
+function clear(){ if(ended)return; ended=true;state.clears++;state.speed=Math.min(2.4,1+(state.deaths+state.clears)*.12); setTimeout(()=>{ const card=document.querySelector('.card');document.getElementById('title').textContent='COURSE CLEAR!';document.getElementById('subtitle').textContent=`Coins ${state.coins} · Stomps ${state.kills} · Deaths ${state.deaths}`;document.getElementById('start').textContent='RUN AGAIN';document.getElementById('overlay').classList.remove('hidden'); },350); updateHUD(); }
+function toast(text){ const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),700); }
+function updateHUD(){ document.getElementById('coins').textContent=state.coins;document.getElementById('kills').textContent=state.kills;document.getElementById('deaths').textContent=state.deaths;document.getElementById('speedNum').textContent=state.speed.toFixed(1)+'×';document.getElementById('speedFill').style.width=Math.min(100,(state.speed-.7)/1.7*100)+'%'; }
+
+function rects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function update(dt){
+  if(!started||ended)return;
+  dt=Math.min(dt,.032)*state.speed; player.inv=Math.max(0,player.inv-dt);
+  const accel=1700, max=260*scale;
+  if(keys.left){player.vx-=accel*dt;player.facing=-1}else if(keys.right){player.vx+=accel*dt;player.facing=1}else player.vx*=Math.pow(.001,dt);
+  player.vx=Math.max(-max,Math.min(max,player.vx));
+  player.vy+=1150*dt; player.x+=player.vx*dt; player.y+=player.vy*dt;
+  player.ground=false;
+  for(const p of platforms){ if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h-player.vy*dt<=p.y+8){ player.y=p.y-player.h;player.vy=0;player.ground=true; } }
+  if(player.y>H+100)killPlayer();
+  if(player.x<0)player.x=0;
+  for(const c of coins){ c.t+=dt;if(!c.taken&&rects(player,{x:c.x-12,y:c.y-12,w:24,h:24})) { c.taken=true;state.coins++;player.jumpBoost=Math.min(12,player.jumpBoost+1);toast('+ COIN  JUMP UP');updateHUD(); } }
+  for(const e of enemies){ if(!e.alive)continue;e.x=e.base+Math.sin(performance.now()/700*e.dir)*e.range; if(rects(player,e)){ if(player.vy>120&&player.y+player.h-e.y<22){e.alive=false;player.vy=-520;state.kills++;player.jumpBoost=Math.max(0,player.jumpBoost-1);toast('STOMP  JUMP DOWN');updateHUD();}else killPlayer(); } }
+  if(rects(player,goal))clear();
+  state.shake=Math.max(0,state.shake-dt*30);
+}
+
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // sky
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#70c2ff');g.addColorStop(.75,'#b9e8ff');g.addColorStop(1,'#f5edca');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // clouds
+  ctx.fillStyle='rgba(255,255,255,.88)'; for(let i=-1;i<7;i++){let x=((i*260-player.x*.12)%1820)-100;if(x<-180)x+=1820;cloud(x,H*.16+(i%3)*45);} 
+  // parallax hills
+  ctx.fillStyle='#75b96d';ctx.beginPath();ctx.moveTo(0,H*.82);for(let x=-200;x<W+300;x+=240){ctx.quadraticCurveTo(x+120,H*.48-(x%2)*20,x+240,H*.82)}ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+  ctx.save();ctx.translate(-Math.min(player.x-W*.25,0),0);ctx.translate((Math.random-.5)*state.shake,(Math.random-.5)*state.shake);
+  // platforms
+  for(const p of platforms){ drawPlatform(p); }
+  // coins
+  for(const c of coins){if(c.taken)continue;drawCoin(c.x,c.y,c.t)}
+  // enemies
+  for(const e of enemies)if(e.alive)drawEnemy(e);
+  drawGoal(goal);
+  drawPlayer();ctx.restore();
+}
+function cloud(x,y){ctx.beginPath();ctx.arc(x,y,24,0,7);ctx.arc(x+28,y-12,34,0,7);ctx.arc(x+65,y-3,27,0,7);ctx.arc(x+95,y+8,20,0,7);ctx.fill();}
+function drawPlatform(p){ctx.fillStyle='#9a633d';ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle='#69ae46';ctx.fillRect(p.x,p.y,p.w,10);ctx.fillStyle='#91d468';for(let x=p.x;x<p.x+p.w;x+=24){ctx.beginPath();ctx.moveTo(x,p.y+10);ctx.lineTo(x+12,p.y+10);ctx.lineTo(x+18,p.y+18);ctx.lineTo(x+6,p.y+18);ctx.fill()}ctx.fillStyle='#b87c50';for(let x=p.x+10;x<p.x+p.w;x+=38)ctx.fillRect(x,p.y+18,18,4)}
+function drawCoin(x,y,t){ctx.save();ctx.translate(x,y);ctx.scale(.65+Math.abs(Math.sin(t*5))*1.35,1);ctx.fillStyle='#ffb526';ctx.beginPath();ctx.arc(0,0,13,0,7);ctx.fill();ctx.strokeStyle='#fff18a';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#e18a20';ctx.fillRect(-2,-8,4,16);ctx.restore();}
+function drawEnemy(e){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle='#75453a';roundRect(0,5,e.w,e.h-5,12);ctx.fillStyle='#4a302d';ctx.fillRect(4,29,30,9);ctx.fillStyle='#fff';ctx.fillRect(7,10,9,10);ctx.fillRect(22,10,9,10);ctx.fillStyle='#222';ctx.fillRect(12,13,4,7);ctx.fillRect(22,13,4,7);ctx.restore();}
+function drawGoal(g){ctx.fillStyle='#fff';ctx.fillRect(g.x,g.y,7,g.h);ctx.fillStyle='#ed4d59';ctx.beginPath();ctx.moveTo(g.x+7,g.y+8);ctx.lineTo(g.x+62,g.y+25);ctx.lineTo(g.x+7,g.y+43);ctx.fill();ctx.fillStyle='#ffd45c';ctx.beginPath();ctx.arc(g.x+3,g.y-5,9,0,7);ctx.fill();}
+function drawPlayer(){ctx.save();ctx.translate(player.x+player.w/2,player.y+player.h/2);ctx.scale(player.facing,1);ctx.fillStyle='#ed4d59';roundRect(-17,-23,34,16,7);ctx.fillStyle='#ffb13b';ctx.fillRect(-12,-7,24,18);ctx.fillStyle='#ffd0a1';roundRect(-10,-18,20,15,6);ctx.fillStyle='#493c73';ctx.fillRect(-11,11,9,12);ctx.fillRect(2,11,9,12);ctx.fillStyle='#fff';ctx.fillRect(-8,-15,5,5);ctx.fillStyle='#322b51';ctx.fillRect(-5,-14,3,5);ctx.fillStyle='#754b31';ctx.beginPath();ctx.moveTo(-12,-20);ctx.lineTo(12,-20);ctx.lineTo(8,-14);ctx.lineTo(-15,-14);ctx.fill();ctx.restore();}
+
+function loop(t){const dt=(t-last)/1000||0;last=t;update(dt);draw();raf=requestAnimationFrame(loop)}
+raf=requestAnimationFrame(loop);
+
+document.getElementById('start').onclick=start;
+addEventListener('keydown',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.left=true;if(['ArrowRight','d','D'].includes(e.key))keys.right=true;if(['ArrowUp','w','W',' '].includes(e.key)){keys.jump=true;jump()}if(e.key==='r'||e.key==='R')start();});
+addEventListener('keyup',e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.left=false;if(['ArrowRight','d','D'].includes(e.key))keys.right=false;if(['ArrowUp','w','W',' '].includes(e.key))keys.jump=false;});
+function bind(id,left,right,jumpKey){const el=document.getElementById(id);let key=id;if(right)key='right';else if(left)key='left';else key='jump';const on=ev=>{ev.prevent.preventDefault?.();ev.preventDefault();if(key==='jump')jump();else keys[key]=true};const off=ev=>{ev.preventDefault();if(key!=='jump')keys[key]=false};el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off)}
+bind('left',true,false,false);bind('right',false,true,false);bind('jump',false,false,true);
+})();
+</script>
+</body>
+</html>
