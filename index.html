@@ -20,10 +20,10 @@ const BASE=[{name:'Water',icon:'💧',tier:1,element:'water',strength:'Fire',wea
 const STATE={page:'home',inventory:{Water:4,Fire:3,Earth:3,Air:3},recipes:{},discovered:new Set(['Water','Fire','Earth','Air']),selected:[],coins:120,dust:8,xp:240,level:4,rank:'Wayfinder',wins:3,explores:0,bossHp:100,playerHp:100,levelNo:1,collection:[],custom:[],customLevels:[],customModes:[],crafted:0,sound:false};
 let toastTimer;const $=s=>document.querySelector(s);const safe=(n)=>String(n).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){try{localStorage.setItem('wildAlchemySave',JSON.stringify({...STATE,discovered:[...STATE.discovered]}))}catch(e){}}
-function load(){try{let x=JSON.parse(localStorage.getItem('wildAlchemySave'));if(x){Object.assign(STATE,x);STATE.discovered=new Set(x.discovered||[]);STATE.selected=[]}}catch(e){}}
+function load(){try{let x=JSON.parse(localStorage.getItem('wildAlchemySave'));if(x){Object.assign(STATE,x);STATE.discovered=new Set(x.discovered||[]);for(const r of Object.values(STATE.recipes||{}))if(r.name)STATE.discovered.add(r.name);STATE.selected=[]}}catch(e){}}
 function startGame(){load();$('#welcome').classList.add('hidden');$('#app').classList.remove('hidden');render();save()}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2100)}
-function allElements(){return [...BASE,...Object.entries(STATE.recipes).map(([name,r])=>({name,icon:r.icon||'✨',tier:r.tier,element:r.element||'arcane',strength:r.strength||'—',weak:r.weak||'—',recipe:r})) ,...STATE.custom.map(x=>({...x,tier:1,custom:true}))]}
+function allElements(){return [...BASE,...Object.values(STATE.recipes).map(r=>({...r,icon:r.icon||'✨',element:r.element||'arcane',strength:r.strength||'—',weak:r.weak||'—',recipe:r})),...STATE.custom.map(x=>({...x,tier:1,custom:true}))]}
 function getEl(name){return allElements().find(e=>e.name===name)||{name,icon:'✨',tier:1}}
 function pairKey(a,b){return [a,b].sort((x,y)=>x.localeCompare(y)).join(' + ')}
 function makeRecipe(a,b){const key=pairKey(a,b);if(STATE.recipes[key])return STATE.recipes[key];const ea=getEl(a),eb=getEl(b),tier=ea.tier+1;if(ea.tier>=5)return null;
