@@ -18,10 +18,8 @@ function seededMaze(){
   function carve(x,y){m[y][x]=0; const dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-.5); for(const [dx,dy] of dirs){const nx=x+dx,ny=y+dy;if(nx>0&&ny>0&&nx<gridSize-1&&ny<gridSize-1&&m[ny][nx]===1){m[y+dy/2][x+dx/2]=0;carve(nx,ny)}}}
   carve(1,1);
   // Keep the human spawn at grid (0,0) clear, open, and connected to the maze.
-  m[0][0]=0;
-  m[0][1]=0;
-  m[1][0]=0;
-  m[1][1]=0;
+  // Guaranteed open start plaza, with clear routes toward the generated maze.
+  for(let y=0;y<5;y++) for(let x=0;x<5;x++) m[y][x]=0;
   // Open a few loops and scattered chambers
   for(let i=0;i<22;i++){const x=1+Math.floor(Math.random()*15),y=1+Math.floor(Math.random()*15);if(m[y]&&m[x])m[y][x]=0}
   m[gridSize-2][gridSize-2]=0;
@@ -59,9 +57,10 @@ function buildLevel(){
   // player
   if(player)scene.remove(player); player=new THREE.Group();
   const body=new THREE.Mesh(new THREE.IcosahedronGeometry(.28,1),new THREE.MeshStandardMaterial({color:0xdffeff,emissive:0x4de5ff,emissiveIntensity:1.4,metalness:.7,roughness:.18}));body.visible=false;body.castShadow=true;player.add(body);const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.7,8),new THREE.MeshBasicMaterial({color:0x8cecff,transparent:true,opacity:.5}));beam.visible=false;beam.position.y=.35;player.add(beam);
+  // Grid (0,0) maps to world (-8.96,-8.96). The 5x5 start plaza guarantees free sight and movement.
   const startX=(0-(gridSize-1)/2)*cell, startZ=(0-(gridSize-1)/2)*cell;
   player.position.set(startX,.78,startZ);scene.add(player);
-  px=1;pz=1;facing.set(0,0,1);collected=0;stability=100;updateUI();
+  px=0;pz=0;facing.set(0,0,1);collected=0;stability=100;updateUI();
 }
 
 function updateUI(){document.getElementById('level').textContent=String(level).padStart(2,'0');document.getElementById('shards').textContent=`${collected}/3`;document.getElementById('stability').textContent=`${Math.ceil(stability)}%`;document.getElementById('progress').style.width=`${collected/3*100}%`}
