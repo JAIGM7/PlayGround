@@ -5,6 +5,7 @@ PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 : "${CAPTURE_URL:?Set CAPTURE_URL to the exact public preview URL}"
 : "${CAPTURE_DIR:?Set CAPTURE_DIR to an evidence directory outside the project}"
 : "${RUNTIME_DIR:?RUNTIME_DIR must point to the OMGithub runtime}"
+export CAPTURE_URL CAPTURE_DIR
 
 run_timed() {
   /usr/bin/time -p "$@"
